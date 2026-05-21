@@ -1,7 +1,7 @@
 #app/schemas/run.py
 
-from pydantic import BaseModel,Field
-from typing import Annotated,Optional
+from pydantic import BaseModel
+from typing import Optional
 
 class RunCreate(BaseModel):
     experiment_id:int
@@ -16,4 +16,8 @@ class RunResponse(BaseModel):
     model_name:str
     status:str
 
-    
+class RunUpdate(BaseModel):
+    status:Optional[str]=None
+    score:Optional[float]=None
+    model_name:Optional[str]=None
+
