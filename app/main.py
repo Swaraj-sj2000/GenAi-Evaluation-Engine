@@ -22,5 +22,5 @@ async def generic_exception_handler(request:Request,exc:Exception):
         content={'detail':'Something went wrong,PLease try again'}
     )
 
-app.include_router(health.router,prefix='/api/v1')
+app.include_router(health.router)
 app.include_router(runs.router,prefix="/api/v1")
