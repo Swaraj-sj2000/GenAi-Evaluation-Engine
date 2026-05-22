@@ -21,3 +21,8 @@ class RunUpdate(BaseModel):
     score:Optional[float]=None
     model_name:Optional[str]=None
 
+class RegUser(BaseModel):
+    pass
+
+class LoginData(BaseModel):
+    pass
