@@ -8,8 +8,8 @@ from fastapi import APIRouter,HTTPException,Depends
 from app.schemas.user import UserCreate, UserResponse, LoginData
 from app.repositories.user_repo import create_user,get_user_by_username
 from app.utils.auth_utils import create_acess_token
-from app.utils.password_utils import hash_password,verify_password
-
+from app.utils.password_utils import verify_password
+from app.utils.auth_utils import get_current_user
 
 router=APIRouter(prefix="/auth",tags=['auth'])
 
@@ -30,3 +30,7 @@ def login(credentials:LoginData,db:Session=Depends(get_db)):
     token=create_acess_token(data={'sub':user.username})
 
     return {'message':'Login successful','token':token,'token_type':'bearer'}
+
+@router.get('/me',response_model=UserResponse)
+def get_current_user_info(current_user=Depends(get_current_user)):
+    return UserResponse(id=current_user.id,username=current_user.username)
