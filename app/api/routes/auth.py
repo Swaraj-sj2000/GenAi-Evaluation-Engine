@@ -1,21 +1,32 @@
-#app/auth.py
-'''
-This module will be specially dedicated to JWT authentication which will be
-later followed by OAuth2 authentication.
-PLEASE DO NOT MODIFY WITHOUT PERMISSION.
-'''
+#app/api/routes/auth.py
+
+
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.run import Run
 
 from fastapi import APIRouter,HTTPException,Depends
-from app.schemas.run import RegUser,RunResponse,LoginData
+from app.schemas.user import UserCreate, UserResponse, LoginData
+from app.repositories.user_repo import create_user,get_user_by_username
+from app.utils.auth_utils import create_acess_token
+from app.utils.password_utils import hash_password,verify_password
+
+
 router=APIRouter(prefix="/auth",tags=['auth'])
-@router.post('/register',response_model=RunResponse)
-def register_user(user_data:RegUser,db:Session=Depends(get_db)):
-    pass
+
+@router.post('/register',response_model=UserResponse)
+def register_user(user_data:UserCreate,db:Session=Depends(get_db)):
+    existing_user = get_user_by_username(db,user_data.username)
+    if existing_user:
+        raise HTTPException(status_code=400,detail={'message':'Username already exists'})
+    
+    return create_user(db,user_data)
 
 @router.post('/login',tags=['login'])
 def login(credentials:LoginData,db:Session=Depends(get_db)):
-    pass
+    user=get_user_by_username(db,credentials.username)
 
+    if user is None or not verify_password(credentials.password,user.hashed_password):
+        raise HTTPException(status_code=401,detail={'message':'Invalid username or password'})
+    token=create_acess_token(data={'sub':user.username})
+
+    return {'message':'Login successful','token':token,'token_type':'bearer'}

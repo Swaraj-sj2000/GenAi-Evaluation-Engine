@@ -13,3 +13,5 @@ class Run(Base):
     status = Column(String, default="pending")
     score = Column(Float, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+
+

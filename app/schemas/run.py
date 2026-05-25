@@ -22,7 +22,15 @@ class RunUpdate(BaseModel):
     model_name:Optional[str]=None
 
 class RegUser(BaseModel):
-    pass
+    username:str
+    password:str
+
 
 class LoginData(BaseModel):
-    pass
+    username:str
+    password:str
+
+class UserResponse(BaseModel):
+    id:int
+    username:str
+    
