@@ -6,6 +6,7 @@ from app.repositories import run_repo
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.auth_utils import get_current_user
+from app.services.eval_service import EvalService
 
 router=APIRouter(prefix="/runs",tags=['runs'])
 
@@ -31,3 +32,22 @@ def update_run(run_id:int,run_data:RunUpdate,db:Session=Depends(get_db),current_
     if run is None:
         raise HTTPException(status_code=404,detail={'message':'Run not found'})
     return run
+
+@router.post("/{run_id}/evaluate",response_model=RunResponse)
+def evaluate_run(run_id:int,db:Session=Depends(get_db),current_user=Depends(get_current_user)):
+    run=run_repo.get_run(db,run_id)
+    if run is None:
+        raise HTTPException(status_code=404,detail={'message':'Run not found'})
+    
+    evaluator=EvalService()
+    evaluated_run=evaluator.evaluate(db,run)
+    return evaluated_run
+
+
+
+    
+    
+    
+
+ 
+ 

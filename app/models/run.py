@@ -14,4 +14,6 @@ class Run(Base):
     score = Column(Float, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
+    
 
+    

@@ -15,22 +15,20 @@ class RunResponse(BaseModel):
     prompt:str
     model_name:str
     status:str
+    score:float|None=None
+    correctness:float|None=None
+    completeness:float|None=None
+    clarity:float|None=None
 
 class RunUpdate(BaseModel):
     status:Optional[str]=None
     score:Optional[float]=None
     model_name:Optional[str]=None
 
-class RegUser(BaseModel):
-    username:str
-    password:str
 
 
-class LoginData(BaseModel):
-    username:str
-    password:str
 
-class UserResponse(BaseModel):
-    id:int
-    username:str
+
+
+
     
