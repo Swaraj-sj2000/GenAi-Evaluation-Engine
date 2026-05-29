@@ -8,3 +8,5 @@ alembic/versions/*.pyc
 PROJECT_JOURNAL.md
 BACKEND_LEARN.md
 tests/
+*notes*.py
+

@@ -19,6 +19,7 @@ class RunResponse(BaseModel):
     correctness:float|None=None
     completeness:float|None=None
     clarity:float|None=None
+    
 
 class RunUpdate(BaseModel):
     status:Optional[str]=None

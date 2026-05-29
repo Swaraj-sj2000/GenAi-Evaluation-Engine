@@ -4,7 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate,SystemMessagePromptTemplate,HumanMessagePromptTemplate
 from tenacity import retry, stop_after_attempt,wait_exponential
 from app.config import setting
-
+import asyncio
 
 class ScoreResult(BaseModel):
     score:float
@@ -49,9 +49,9 @@ class ScorerService:
 
 
     @retry(stop=stop_after_attempt(3),wait=wait_exponential(multiplier=1, min=2, max=10))
-    def score(self,prompt:str,model_output:str)->ScoreResult:
+    async def score(self,prompt:str,model_output:str)->ScoreResult:
         try:
-            result=self.chain.invoke(
+            result=self.chain.ainvoke(
                 {
                     'prompt':prompt,
                     'model_output':model_output
@@ -62,3 +62,6 @@ class ScorerService:
         
         
         return result
+    
+
+

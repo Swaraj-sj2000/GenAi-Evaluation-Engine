@@ -12,6 +12,9 @@ class Run(Base):
     model_name = Column(String, default="gpt-4")
     status = Column(String, default="pending")
     score = Column(Float, nullable=True)
+    correctness=Column(Float,nullable=True)
+    completeness=Column(Float,nullable=True)
+    clarity=Column(Float,nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     
