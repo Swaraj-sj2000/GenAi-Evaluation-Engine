@@ -10,7 +10,7 @@ from jose import jwt, JWTError
 from app.database import get_db
 from app.config import setting
 from app.repositories.user_repo import get_user_by_username
-
+from app.redis_client import get_redis
 
 ALGORITHM='HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES=30
@@ -25,9 +25,13 @@ def create_acess_token(data:dict)->str:
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), 
-                     db: Session = Depends(get_db)):
+                     db: Session = Depends(get_db),
+                     redis_client=Depends(get_redis)):
     try:
         payload = jwt.decode(token, setting.secret_key, algorithms=[ALGORITHM])
+        if redis_client.get(token):
+            raise HTTPException(status_code=401, detail="Token has been revoked")
+        
         username = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")

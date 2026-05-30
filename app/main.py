@@ -6,8 +6,12 @@ from app.api.routes import runs
 from app.config import setting
 from app.api.routes import health
 from app.api.routes import auth
+from app.middleware.rate_limit import RateLimitMiddleware
+
 
 app=FastAPI(title=setting.app_name,debug=setting.debug)
+
+app.add_middleware(RateLimitMiddleware)
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request:Request,exc:ValueError):
@@ -22,7 +26,6 @@ async def generic_exception_handler(request:Request,exc:Exception):
         status_code=500,
         content={'detail':'Something went wrong,PLease try again'}
     )
-
 app.include_router(health.router)
 app.include_router(runs.router,prefix="/api/v1")
 app.include_router(auth.router,prefix="/api/v1")

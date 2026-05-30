@@ -6,9 +6,14 @@ from app.database import get_db
 from fastapi import APIRouter,HTTPException,Depends
 from app.schemas.user import UserCreate, UserResponse, LoginData
 from app.repositories.user_repo import create_user,get_user_by_username
-from app.utils.auth_utils import create_acess_token
+from app.utils.auth_utils import ALGORITHM, create_acess_token
 from app.utils.password_utils import verify_password
 from app.utils.auth_utils import get_current_user
+from app.redis_client import get_redis
+from app.utils.auth_utils import oauth2_scheme
+from jose import jwt, JWTError
+from app.config import setting
+from datetime import datetime,timezone
 
 router=APIRouter(prefix="/auth",tags=['auth'])
 
@@ -29,6 +34,20 @@ def login(credentials:LoginData,db:Session=Depends(get_db)):
     token=create_acess_token(data={'sub':user.username})
 
     return {'message':'Login successful','token':token,'token_type':'bearer'}
+
+@router.post('/logout',tags=['logout'])
+def logout(token:str=Depends(oauth2_scheme),redis_client=Depends(get_redis)):
+    payload = jwt.decode(token, setting.secret_key, algorithms=[ALGORITHM])
+    exp=payload.get('exp')
+    remaining=int(exp-datetime.now(timezone.utc).timestamp())
+    redis_client.set(token,'blacklisted',ex=remaining)
+    return {'message':'Logout successful'}
+
+
+
+    
+    
+
 
 @router.get('/me',response_model=UserResponse)
 def get_current_user_info(current_user=Depends(get_current_user)):

@@ -1,8 +1,9 @@
 #app/Config.py
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     app_name: str = "GenAI Eval Engine"
     database_url: str
     secret_key: str
@@ -12,8 +13,8 @@ class Settings(BaseSettings):
     langchain_api_key: str
     langchain_tracing_v2: str = "true"
     langchain_project: str = "eval-engine"
-    class Config:
-        env_file=".env"
+    redis_url: str
+  
 
 setting=Settings()
 

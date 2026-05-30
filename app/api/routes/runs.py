@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.auth_utils import get_current_user
 from app.services.eval_service import EvalService
+from app.redis_client import get_redis
 
 router=APIRouter(prefix="/runs",tags=['runs'])
 
@@ -34,13 +35,13 @@ def update_run(run_id:int,run_data:RunUpdate,db:Session=Depends(get_db),current_
     return run
 
 @router.post("/{run_id}/evaluate",response_model=RunResponse)
-def evaluate_run(run_id:int,db:Session=Depends(get_db),current_user=Depends(get_current_user)):
+def evaluate_run(run_id:int,db:Session=Depends(get_db),current_user=Depends(get_current_user),redis_client=Depends(get_redis)):
     run=run_repo.get_run(db,run_id)
     if run is None:
         raise HTTPException(status_code=404,detail={'message':'Run not found'})
     
     evaluator=EvalService()
-    evaluated_run=evaluator.evaluate(db,run)
+    evaluated_run=evaluator.evaluate(db,run,redis_client)
     return evaluated_run
 
 

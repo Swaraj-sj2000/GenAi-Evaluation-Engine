@@ -7,6 +7,8 @@ __pycache__/
 alembic/versions/*.pyc
 PROJECT_JOURNAL.md
 BACKEND_LEARN.md
+SESSION_HANDOUT.md
 tests/
 *notes*.py
 
+*roadmap*
