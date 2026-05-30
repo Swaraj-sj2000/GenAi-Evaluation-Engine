@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session
 from app.models.run import Run
 from app.schemas.run import RunCreate, RunUpdate
+from app.utils.cache_utils import make_cache_key
 
 def create_run(db:Session,run_data:RunCreate)->Run:
     db_run=Run(
@@ -23,11 +24,14 @@ def get_run(db:Session,run_id:int)->Run|None:
 def get_runs(db:Session,skip:int=0,limit:int=10)->list[Run]:
     return db.query(Run).offset(skip).limit(limit).all()
 
-def update_run(db:Session,run_id:int,updates:RunUpdate)->Run|None:
+def update_run(db:Session,run_id:int,updates:RunUpdate,redis_client)->Run|None:
     db_run=get_run(db,run_id)
 
     if db_run is None:
         return None
+    
+    cache_key=make_cache_key(db_run.prompt,db_run.model_output)
+    redis_client.delete(cache_key)
     
     for key,value in updates.model_dump(exclude_unset=True).items():
         setattr(db_run,key,value)

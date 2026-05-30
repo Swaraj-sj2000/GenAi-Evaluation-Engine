@@ -43,12 +43,6 @@ def logout(token:str=Depends(oauth2_scheme),redis_client=Depends(get_redis)):
     redis_client.set(token,'blacklisted',ex=remaining)
     return {'message':'Logout successful'}
 
-
-
-    
-    
-
-
 @router.get('/me',response_model=UserResponse)
 def get_current_user_info(current_user=Depends(get_current_user)):
     return UserResponse(id=current_user.id,username=current_user.username)

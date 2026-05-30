@@ -28,8 +28,9 @@ def get_run(run_id:int,db:Session=Depends(get_db),current_user=Depends(get_curre
     return run
 
 @router.patch("/{run_id}",response_model=RunResponse,status_code=200)
-def update_run(run_id:int,run_data:RunUpdate,db:Session=Depends(get_db),current_user=Depends(get_current_user)):
-    run=run_repo.update_run(db,run_id,run_data)
+def update_run(run_id:int,run_data:RunUpdate,db:Session=Depends(get_db),current_user=Depends(get_current_user),redis_client=Depends(get_redis)):
+    
+    run=run_repo.update_run(db,run_id,run_data,redis_client)
     if run is None:
         raise HTTPException(status_code=404,detail={'message':'Run not found'})
     return run
