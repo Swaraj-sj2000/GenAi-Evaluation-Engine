@@ -7,11 +7,12 @@ from app.config import setting
 from app.api.routes import health
 from app.api.routes import auth
 from app.middleware.rate_limit import RateLimitMiddleware
-
+from app.middleware import logging_middleware
 
 app=FastAPI(title=setting.app_name,debug=setting.debug)
 
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(logging_middleware.LoggingMiddleware)
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request:Request,exc:ValueError):
