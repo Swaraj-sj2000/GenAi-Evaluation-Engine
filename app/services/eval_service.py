@@ -11,7 +11,6 @@ class EvalService:
     def __init__(self,scorer=None):
         self.scorer=scorer or ScorerService()
 
-    
     def evaluate(self, db: Session, run: Run, redis_client ) -> Run:
         prompt=run.prompt
         model_output=run.model_output
