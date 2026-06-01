@@ -1,6 +1,6 @@
 #app/models/run.py
 
-from sqlalchemy import Column,Integer,String,Float,DateTime, func
+from sqlalchemy import Boolean, Column,Integer,String,Float,DateTime, func
 from app.database import Base
 
 class Run(Base):
@@ -16,6 +16,9 @@ class Run(Base):
     completeness=Column(Float,nullable=True)
     clarity=Column(Float,nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+    is_golden = Column(Boolean, default=False)  
+    expected_score = Column(Float, nullable=True)
+
 
     
 
