@@ -2,6 +2,7 @@
 from fastapi import FastAPI ,Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from contextlib import asynccontextmanager
 
 from app.api.routes import runs
 from app.config import setting
@@ -9,6 +10,27 @@ from app.api.routes import health
 from app.api.routes import auth
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware import logging_middleware
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- STARTUP ---
+    # nothing critical to initialize right now
+    print("Eval engine starting up...")
+    
+    yield  # app runs here, handling requests normally
+    
+    # --- SHUTDOWN ---
+    # runs after in-flight requests complete, before process exits
+    print("Eval engine shutting down, closing connections...")
+    
+    from app.database import engine
+    engine.dispose()  # closes all SQLAlchemy pool connections cleanly
+    
+    import redis as redis_lib
+    r = redis_lib.Redis.from_url(setting.redis_url)
+    r.connection_pool.disconnect()  # closes Redis pool connections
+    
+    print("Shutdown complete.")
 
 app=FastAPI(title=setting.app_name,debug=setting.debug)
 
@@ -40,3 +62,4 @@ async def generic_error_handler(request:Request, exc:Exception):
 app.include_router(health.router)
 app.include_router(runs.router,prefix="/api/v1")
 app.include_router(auth.router,prefix="/api/v1")
+
