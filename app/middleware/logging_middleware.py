@@ -13,10 +13,9 @@ logging.basicConfig(level=logging.INFO)
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = str(uuid.uuid4())
+        request.state.request_id=request_id
         start = time.time()
-        
         response = await call_next(request)
-        
         duration_ms = (time.time() - start) * 1000 
         
         logger.info(json.dumps({
@@ -27,4 +26,5 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             "duration_ms": duration_ms,
         }))
         
+        response.headers['X-Request-ID'] = request_id
         return response

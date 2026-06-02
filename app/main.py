@@ -1,6 +1,7 @@
 #app/main.py
 from fastapi import FastAPI ,Request
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from app.api.routes import runs
 from app.config import setting
@@ -14,18 +15,27 @@ app=FastAPI(title=setting.app_name,debug=setting.debug)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(logging_middleware.LoggingMiddleware)
 
-@app.exception_handler(ValueError)
-async def value_error_handler(request:Request,exc:ValueError):
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request:Request,exc:RequestValidationError):
     return JSONResponse(
-        status_code=400,
-        content={'detail':f"Invalid input:{str(exc)}"}
+        status_code=422,
+        content={'error':'validation_error',
+                 'message':str(exc.errors()[0]['msg']),
+                 'request_id':request.state.request_id if hasattr(request.state,'request_id') else None,
+                 'status_code':422}
     )
 
 @app.exception_handler(Exception)
-async def generic_exception_handler(request:Request,exc:Exception):
+async def generic_error_handler(request:Request, exc:Exception):
+    request_id=getattr(request.state,'request_id',None)
     return JSONResponse(
         status_code=500,
-        content={'detail':'Something went wrong,PLease try again'}
+        content={
+            "error": "internal_error",
+            "message": "Something went wrong",
+            "request_id": request_id,
+            "status_code": 500
+        }
     )
 app.include_router(health.router)
 app.include_router(runs.router,prefix="/api/v1")

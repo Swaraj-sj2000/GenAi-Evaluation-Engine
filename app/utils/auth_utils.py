@@ -17,7 +17,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')
 
 
-def create_acess_token(data:dict)->str:
+def create_access_token(data:dict)->str:
     to_encode=data.copy()
     expire = datetime.now(timezone.utc)+timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)     
     to_encode.update({'exp':expire})
