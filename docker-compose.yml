@@ -28,8 +28,7 @@ services:
 
   api:
     build: .
-    ports:
-      - "8000:8000"
+    
     env_file:
       - .env.docker
     depends_on:
@@ -48,6 +47,16 @@ services:
       redis:
         condition: service_healthy
     command: celery -A app.celery_app worker --loglevel=info
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+
 
 volumes:
   postgres_data:
