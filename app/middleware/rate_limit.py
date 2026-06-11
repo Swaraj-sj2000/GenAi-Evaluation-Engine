@@ -17,7 +17,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         count=self.redis_client.get(key)
         if count is None:
             self.redis_client.set(key,1,ex=60)
-        elif int(count)<10:
+        elif int(count)<1000:
             self.redis_client.incr(key)
         else:
             return JSONResponse(status_code=429,content={"message":"Too many requests. Please try again later."})

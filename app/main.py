@@ -10,6 +10,7 @@ from app.api.routes import health
 from app.api.routes import auth
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware import logging_middleware
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,11 +33,20 @@ async def lifespan(app: FastAPI):
     
     print("Shutdown complete.")
 
-app=FastAPI(title=setting.app_name,debug=setting.debug)
+app = FastAPI(title=setting.app_name, debug=setting.debug)
 
-app.add_middleware(RateLimitMiddleware)
+# CORS must be first
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+
 app.add_middleware(logging_middleware.LoggingMiddleware)
-
+app.add_middleware(RateLimitMiddleware)
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request:Request,exc:RequestValidationError):
     return JSONResponse(
