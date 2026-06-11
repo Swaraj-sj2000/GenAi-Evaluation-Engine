@@ -23,11 +23,12 @@ class EvalService:
             score_result=self.scorer.score(prompt,model_output)
             redis_client.set(cache_key, score_result.model_dump_json(),ex=3600)
 
-        run.score=score_result.score
-        run.correctness=score_result.correctness
-        run.completeness=score_result.completeness
-        run.clarity=score_result.clarity
-        run.status='completed'
+        run.score = score_result.score
+        run.correctness = score_result.correctness
+        run.completeness = score_result.completeness
+        run.clarity = score_result.clarity
+        run.reasoning = score_result.reasoning
+        run.status = 'completed'
 
         db.add(run)
         db.commit()

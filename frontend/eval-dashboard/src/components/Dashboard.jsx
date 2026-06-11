@@ -1,132 +1,174 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getRuns, submitRun, triggerEval, getRunById, logout, getMe } from '../services/api'
+import RunForm from './RunForm'
+import RunList from './RunList'
+import RunDetail from './RunDetail'
 
 function Dashboard({ token, onLogout }) {
-    const [runs, setRuns] = useState([])
-    const [prompt, setPrompt] = useState("")
-    const [modelOutput, setModelOutput] = useState("")
-    const [status, setStatus] = useState("")
-    const [username, setUsername] = useState("")
-    const [selectedRun, setSelectedRun] = useState(null)
+  const [runs, setRuns] = useState([])
+  const [username, setUsername] = useState('')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [selectedRun, setSelectedRun] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const pollRef = useRef(null)
 
-    useEffect(() => {
-        loadRuns()
-        loadUser()
-    }, [])
+  useEffect(() => {
+    if (!token) return
+    loadUser()
+    loadRuns()
+    return () => clearPolling()
+  }, [token])
 
-    const loadUser = async () => {
-        try {
-            const data = await getMe(token)
-            setUsername(data.username)
-        } catch (err) {
-            console.error("Failed to load user")
+  const loadUser = async () => {
+    try {
+      const data = await getMe(token)
+      setUsername(data.username)
+    } catch (err) {
+      setError('Unable to load user information.')
+    }
+  }
+
+  const loadRuns = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await getRuns(token)
+      setRuns(data)
+    } catch (err) {
+      setError(err.message || 'Unable to load runs.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const clearPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout(token)
+    } catch (err) {
+      console.warn('Logout failed, clearing local session anyway.')
+    } finally {
+      clearPolling()
+      onLogout()
+    }
+  }
+
+  const handleCreateRun = async (prompt, modelOutput) => {
+    setError('')
+    setMessage('Submitting run...')
+
+    try {
+      const run = await submitRun(token, prompt, modelOutput)
+      setMessage(`Run #${run.id} created. Starting evaluation...`)
+      await triggerEval(token, run.id)
+      pollRunStatus(run.id)
+    } catch (err) {
+      setError(err.message || 'Failed to submit the run.')
+      setMessage('')
+    }
+  }
+
+  const pollRunStatus = (runId) => {
+    clearPolling()
+    pollRef.current = setInterval(async () => {
+      try {
+        const run = await getRunById(token, runId)
+        setMessage(`Run #${runId} status: ${run.status}`)
+        if (run.status === 'completed' || run.status === 'failed') {
+          clearPolling()
+          setSelectedRun(run)
+          loadRuns()
         }
-    }
+      } catch (err) {
+        clearPolling()
+        setError('Unable to refresh run status.')
+      }
+    }, 5000)
+  }
 
-    const loadRuns = async () => {
-        try {
-            const data = await getRuns(token)
-            setRuns(data)
-        } catch (err) {
-            setStatus("Failed to load runs")
-        }
-    }
+  const activeRuns = runs.filter((run) => run.status === 'pending').length
+  const completedRuns = runs.filter((run) => run.status === 'completed').length
+  const failedRuns = runs.filter((run) => run.status === 'failed').length
 
-    const handleLogout = async () => {
-        try {
-            await logout(token)
-        } catch (err) {
-            console.error("Logout API failed")
-        } finally {
-            onLogout()
-        }
-    }
-
-    const handleSubmit = async () => {
-        setStatus("Submitting...")
-        try {
-            const run = await submitRun(token, prompt, modelOutput)
-            setStatus(`Run ${run.id} created. Starting evaluation...`)
-            await triggerEval(token, run.id)
-            setStatus(`Evaluating run ${run.id}...`)
-            pollStatus(run.id)
-        } catch (err) {
-            setStatus(`Error: ${err.message}`)
-        }
-    }
-
-    const pollStatus = (runId) => {
-        const interval = setInterval(async () => {
-            try {
-                const run = await getRunById(token, runId)
-                setStatus(`Run ${runId} status: ${run.status}`)
-                if (run.status === "completed" || run.status === "failed") {
-                    clearInterval(interval)
-                    loadRuns()
-                }
-            } catch (err) {
-                clearInterval(interval)
-            }
-        }, 7000)
-    }
-
-    return (
-        <div className="card">
-            <div className="dashboard-header">
-                <h1>Eval Dashboard</h1>
-                <span className="username">Welcome, {username}</span>
-                <button className="logout-btn" onClick={handleLogout}>Logout</button>
-            </div>
-
-            <textarea
-                placeholder="Enter prompt"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-            />
-            <textarea
-                placeholder="Enter model output"
-                value={modelOutput}
-                onChange={(e) => setModelOutput(e.target.value)}
-            />
-            <button onClick={handleSubmit}>Submit Eval</button>
-            <p>{status}</p>
-
-            <h2>Run History</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Status</th>
-                        <th>Score</th>
-                        <th>Prompt</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {runs.map(run => (
-                        <tr key={run.id} onClick={() => setSelectedRun(run)} className="clickable-row">
-                            <td>{run.id}</td>
-                            <td>{run.status}</td>
-                            <td>{run.score ?? "pending"}</td>
-                            <td>{run.prompt?.slice(0, 50)}...</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            {selectedRun && (
-                <div className="run-detail">
-                    <h2>Run {selectedRun.id} Details</h2>
-                    <p>Status: {selectedRun.status}</p>
-                    <p>Score: {selectedRun.score ?? "pending"}</p>
-                    <p>Correctness: {selectedRun.correctness ?? "pending"}</p>
-                    <p>Completeness: {selectedRun.completeness ?? "pending"}</p>
-                    <p>Clarity: {selectedRun.clarity ?? "pending"}</p>
-                    <p>Model: {selectedRun.model_name}</p>
-                    <button onClick={() => setSelectedRun(null)}>Close</button>
-                </div>
-            )}
+  return (
+    <div className="page-shell dashboard-page">
+      <header className="topbar">
+        <div>
+          <p className="small-label">Logged in as</p>
+          <h2>{username || 'User'}</h2>
         </div>
-    )
+        <div className="topbar-actions">
+          <button className="ghost-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      <section className="intro-card">
+        <div>
+          <p className="small-label">Eval Engine</p>
+          <h1>Fast GenAI evaluation, simplified</h1>
+          <p className="intro-copy">
+            Submit prompts and model output, then review scored evaluation runs
+            with clarity, correctness, and completeness metrics.
+          </p>
+        </div>
+      </section>
+
+      <section className="panel-row">
+        <div className="summary-card">
+          <span className="summary-title">Total runs</span>
+          <strong>{runs.length}</strong>
+        </div>
+        <div className="summary-card">
+          <span className="summary-title">Pending</span>
+          <strong>{activeRuns}</strong>
+        </div>
+        <div className="summary-card">
+          <span className="summary-title">Completed</span>
+          <strong>{completedRuns}</strong>
+        </div>
+        <div className="summary-card">
+          <span className="summary-title">Failed</span>
+          <strong>{failedRuns}</strong>
+        </div>
+      </section>
+
+      <section className="grid-layout">
+        <div className="left-panel">
+          <RunForm onSubmit={handleCreateRun} loading={loading} />
+
+          <div className="status-panel">
+            {message && <div className="alert info-alert">{message}</div>}
+            {error && <div className="alert error-alert">{error}</div>}
+          </div>
+
+          <div className="runs-panel">
+            <div className="panel-head">
+              <h3>Run history</h3>
+              <button className="text-btn" onClick={loadRuns}>Refresh</button>
+            </div>
+            <RunList
+              runs={runs}
+              selectedRunId={selectedRun?.id}
+              onSelect={setSelectedRun}
+            />
+          </div>
+        </div>
+
+        <div className="right-panel">
+          <RunDetail run={selectedRun} />
+        </div>
+      </section>
+    </div>
+  )
 }
 
 export default Dashboard
