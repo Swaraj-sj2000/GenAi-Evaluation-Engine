@@ -77,6 +77,17 @@ export function deleteRun(token, runId) {
   })
 }
 
+export function updateRun(token, runId, updates) {
+  return fetchJson(`${BASE_URL}/runs/${runId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(updates),
+  })
+}
+
 export function logout(token) {
   return fetchJson(`${BASE_URL}/auth/logout`, {
     method: 'POST',
