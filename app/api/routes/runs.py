@@ -52,6 +52,20 @@ def update_run(request:Request,run_id:int,run_data:RunUpdate,db:Session=Depends(
                                         )    
     return run
 
+@router.delete("/{run_id}",status_code=204)
+def delete_run(request:Request,run_id:int,db:Session=Depends(get_db),current_user=Depends(get_current_user)):
+    deleted = run_repo.delete_run(db,run_id)
+    if not deleted:
+        raise HTTPException(
+                    status_code=404,
+                    detail=ErrorResponse(
+                        error='not_found',
+                        message=f'Run with ID {run_id} does not exist',
+                        request_id=request.state.request_id,
+                        status_code=404).model_dump()
+                                        )
+    return
+
 @router.post("/{run_id}/evaluate", status_code=202)
 def evaluate_run(request:Request,run_id: int, db: Session = Depends(get_db),
                  current_user = Depends(get_current_user)):

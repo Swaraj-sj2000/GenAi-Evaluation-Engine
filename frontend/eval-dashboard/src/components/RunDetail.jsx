@@ -1,4 +1,4 @@
-function RunDetail({ run }) {
+function RunDetail({ run, onDelete }) {
   if (!run) {
     return (
       <div className="panel-card empty-card">
@@ -8,11 +8,23 @@ function RunDetail({ run }) {
     )
   }
 
+  const handleDelete = () => {
+    if (!window.confirm(`Delete run #${run.id}? This cannot be undone.`)) {
+      return
+    }
+    onDelete(run.id)
+  }
+
   return (
     <div className="panel-card">
       <div className="panel-head">
-        <h3>Run #{run.id}</h3>
-        <span className={`status-chip ${run.status}`}>{run.status}</span>
+        <div>
+          <h3>Run #{run.id}</h3>
+          <span className={`status-chip ${run.status}`}>{run.status}</span>
+        </div>
+        <button className="danger-btn" onClick={handleDelete}>
+          Delete
+        </button>
       </div>
 
       <div className="detail-row">

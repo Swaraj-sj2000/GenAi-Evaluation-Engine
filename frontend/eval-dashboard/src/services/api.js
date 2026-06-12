@@ -70,6 +70,13 @@ export function getRunById(token, runId) {
   })
 }
 
+export function deleteRun(token, runId) {
+  return fetchJson(`${BASE_URL}/runs/${runId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+}
+
 export function logout(token) {
   return fetchJson(`${BASE_URL}/auth/logout`, {
     method: 'POST',

@@ -41,5 +41,15 @@ def update_run(db:Session,run_id:int,updates:RunUpdate,redis_client)->Run|None:
     return db_run
 
 
+def delete_run(db:Session,run_id:int)->bool:
+    db_run=get_run(db,run_id)
+    if db_run is None:
+        return False
+
+    db.delete(db_run)
+    db.commit()
+    return True
+
+
 def get_golden_runs(db:Session)->list[Run]:
     return db.query(Run).filter(Run.is_golden==True).all()

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getRuns, submitRun, triggerEval, getRunById, logout, getMe } from '../services/api'
+import { getRuns, submitRun, triggerEval, getRunById, deleteRun, logout, getMe } from '../services/api'
 import RunForm from './RunForm'
 import RunList from './RunList'
 import RunDetail from './RunDetail'
@@ -71,6 +71,21 @@ function Dashboard({ token, onLogout }) {
       pollRunStatus(run.id)
     } catch (err) {
       setError(err.message || 'Failed to submit the run.')
+      setMessage('')
+    }
+  }
+
+  const handleDeleteRun = async (runId) => {
+    setError('')
+    setMessage('Deleting run...')
+
+    try {
+      await deleteRun(token, runId)
+      setMessage(`Run #${runId} deleted.`)
+      setSelectedRun(null)
+      loadRuns()
+    } catch (err) {
+      setError(err.message || 'Failed to delete the run.')
       setMessage('')
     }
   }
@@ -164,7 +179,7 @@ function Dashboard({ token, onLogout }) {
         </div>
 
         <div className="right-panel">
-          <RunDetail run={selectedRun} />
+          <RunDetail run={selectedRun} onDelete={handleDeleteRun} />
         </div>
       </section>
     </div>
