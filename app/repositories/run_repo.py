@@ -5,8 +5,9 @@ from app.models.run import Run
 from app.schemas.run import RunCreate, RunUpdate
 from app.utils.cache_utils import make_cache_key
 
-def create_run(db:Session,run_data:RunCreate)->Run:
+def create_run(db: Session, run_data: RunCreate, user_id: int | None = None) -> Run:
     db_run=Run(
+        user_id=user_id,
         experiment_id=run_data.experiment_id,
         prompt=run_data.prompt,
         model_output=run_data.model_output,
@@ -21,11 +22,17 @@ def create_run(db:Session,run_data:RunCreate)->Run:
 def get_run(db:Session,run_id:int)->Run|None:
     return db.query(Run).filter(Run.id==run_id).first()
 
-def get_runs(db:Session,skip:int=0,limit:int=10)->list[Run]:
-    return db.query(Run).offset(skip).limit(limit).all()
+def get_run_for_user(db: Session, run_id: int, user_id: int) -> Run | None:
+    return db.query(Run).filter(Run.id == run_id, Run.user_id == user_id).first()
 
-def update_run(db:Session,run_id:int,updates:RunUpdate,redis_client)->Run|None:
-    db_run=get_run(db,run_id)
+def get_runs(db: Session, skip: int = 0, limit: int = 10, user_id: int | None = None) -> list[Run]:
+    query = db.query(Run)
+    if user_id is not None:
+        query = query.filter(Run.user_id == user_id)
+    return query.offset(skip).limit(limit).all()
+
+def update_run(db: Session, run_id: int, updates: RunUpdate, redis_client, user_id: int | None = None) -> Run | None:
+    db_run = get_run_for_user(db, run_id, user_id) if user_id is not None else get_run(db, run_id)
 
     if db_run is None:
         return None
@@ -41,8 +48,8 @@ def update_run(db:Session,run_id:int,updates:RunUpdate,redis_client)->Run|None:
     return db_run
 
 
-def delete_run(db:Session,run_id:int)->bool:
-    db_run=get_run(db,run_id)
+def delete_run(db: Session, run_id: int, user_id: int | None = None) -> bool:
+    db_run = get_run_for_user(db, run_id, user_id) if user_id is not None else get_run(db, run_id)
     if db_run is None:
         return False
 

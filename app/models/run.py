@@ -1,11 +1,12 @@
 #app/models/run.py
 
-from sqlalchemy import Boolean, Column,Integer,String,Float,DateTime, func
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, DateTime, func
 from app.database import Base
 
 class Run(Base):
     __tablename__='runs'
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     experiment_id = Column(Integer, nullable=False)
     prompt = Column(String, nullable=False)
     model_output = Column(String, nullable=False)

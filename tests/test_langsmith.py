@@ -36,6 +36,17 @@ class FakeScorer:
         )
 
 
+class FakeRedis:
+    def __init__(self):
+        self.values = {}
+
+    def get(self, key):
+        return self.values.get(key)
+
+    def set(self, key, value, ex=None):
+        self.values[key] = value
+
+
 def test_eval_service_updates_run_without_calling_llm(monkeypatch):
     monkeypatch.setattr(eval_service_module, "ScorerService", FakeScorer)
     fake_db = FakeDB()
@@ -47,10 +58,14 @@ def test_eval_service_updates_run_without_calling_llm(monkeypatch):
     )
     evaluator = EvalService()
 
-    result = evaluator.evaluate(db=fake_db, run=fake_run)
+    result = evaluator.evaluate(db=fake_db, run=fake_run, redis_client=FakeRedis())
 
     assert result is fake_run
     assert fake_run.score == 0.82
+    assert fake_run.reasoning == "The answer is mostly correct and clear."
+    assert fake_run.correctness == 0.9
+    assert fake_run.completeness == 0.75
+    assert fake_run.clarity == 0.8
     assert fake_run.status == "completed"
     assert fake_db.added == [fake_run]
     assert fake_db.committed is True
