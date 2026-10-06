@@ -36,6 +36,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)\""]
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 5s
 
   worker:
     build: .
@@ -47,6 +53,8 @@ services:
       redis:
         condition: service_healthy
     command: celery -A app.celery_app worker --loglevel=info
+    healthcheck:
+      disable: true
 
   nginx:
     image: nginx:alpine

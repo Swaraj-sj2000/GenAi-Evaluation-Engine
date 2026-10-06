@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 function RunDetail({ run, onDelete, onUpdate }) {
   const [editMode, setEditMode] = useState(false)
@@ -8,18 +8,6 @@ function RunDetail({ run, onDelete, onUpdate }) {
   const [status, setStatus] = useState('pending')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    if (run) {
-      setEditMode(false)
-      setPrompt(run.prompt || '')
-      setModelOutput(run.model_output || '')
-      setModelName(run.model_name || '')
-      setStatus(run.status || 'pending')
-      setError('')
-      setSaving(false)
-    }
-  }, [run])
 
   if (!run) {
     return (
@@ -35,6 +23,21 @@ function RunDetail({ run, onDelete, onUpdate }) {
       return
     }
     onDelete(run.id)
+  }
+
+  const handleEditToggle = () => {
+    if (editMode) {
+      setEditMode(false)
+      return
+    }
+
+    setPrompt(run.prompt || '')
+    setModelOutput(run.model_output || '')
+    setModelName(run.model_name || '')
+    setStatus(run.status || 'pending')
+    setError('')
+    setSaving(false)
+    setEditMode(true)
   }
 
   const handleSave = async () => {
@@ -63,7 +66,7 @@ function RunDetail({ run, onDelete, onUpdate }) {
           <span className={`status-chip ${run.status}`}>{run.status}</span>
         </div>
         <div>
-          <button className="ghost-btn" onClick={() => setEditMode((prev) => !prev)}>
+          <button className="ghost-btn" onClick={handleEditToggle}>
             {editMode ? 'Cancel' : 'Edit'}
           </button>
           <button className="danger-btn" onClick={handleDelete}>

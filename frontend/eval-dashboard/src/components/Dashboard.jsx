@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { getRuns, submitRun, triggerEval, getRunById, deleteRun, updateRun, logout, getMe } from '../services/api'
 import RunForm from './RunForm'
 import RunList from './RunList'
@@ -13,23 +13,7 @@ function Dashboard({ token, onLogout }) {
   const [loading, setLoading] = useState(false)
   const pollRef = useRef(null)
 
-  useEffect(() => {
-    if (!token) return
-    loadUser()
-    loadRuns()
-    return () => clearPolling()
-  }, [token])
-
-  const loadUser = async () => {
-    try {
-      const data = await getMe(token)
-      setUsername(data.username)
-    } catch (err) {
-      setError('Unable to load user information.')
-    }
-  }
-
-  const loadRuns = async () => {
+  const loadRuns = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
@@ -40,19 +24,40 @@ function Dashboard({ token, onLogout }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
-  const clearPolling = () => {
+  const clearPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current)
       pollRef.current = null
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+
+    Promise.all([getMe(token), getRuns(token)])
+      .then(([userData, runsData]) => {
+        if (cancelled) return
+        setUsername(userData.username)
+        setRuns(runsData)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setError('Unable to load dashboard data.')
+      })
+
+    return () => {
+      cancelled = true
+      clearPolling()
+    }
+  }, [clearPolling, token])
 
   const handleLogout = async () => {
     try {
       await logout(token)
-    } catch (err) {
+    } catch {
       console.warn('Logout failed, clearing local session anyway.')
     } finally {
       clearPolling()
@@ -118,7 +123,7 @@ function Dashboard({ token, onLogout }) {
           setSelectedRun(run)
           loadRuns()
         }
-      } catch (err) {
+      } catch {
         clearPolling()
         setError('Unable to refresh run status.')
       }
@@ -196,7 +201,12 @@ function Dashboard({ token, onLogout }) {
         </div>
 
         <div className="right-panel">
-          <RunDetail run={selectedRun} onDelete={handleDeleteRun} onUpdate={handleUpdateRun} />
+          <RunDetail
+            key={selectedRun ? selectedRun.id : 'empty-run'}
+            run={selectedRun}
+            onDelete={handleDeleteRun}
+            onUpdate={handleUpdateRun}
+          />
         </div>
       </section>
     </div>
